@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lock In Mode</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
+<style>
+:root{
+  --bg:#07111f; --panel:#0d1b2d; --panel2:#11243a; --line:#1d3855;
+  --text:#f4f8ff; --muted:#8fa6bf; --accent:#38d9a9; --accent2:#5c7cfa;
+  --danger:#ff6b6b; --shadow:0 18px 50px rgba(0,0,0,.28); --radius:20px;
+}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:
+radial-gradient(circle at 80% -10%,rgba(92,124,250,.22),transparent 32%),
+radial-gradient(circle at 0% 30%,rgba(56,217,169,.10),transparent 28%),var(--bg);color:var(--text)}
+button,input,textarea,select{font:inherit} button{cursor:pointer}
+.app{display:flex;min-height:100vh}.sidebar{width:250px;background:rgba(7,17,31,.88);border-right:1px solid var(--line);padding:24px 16px;position:fixed;inset:0 auto 0 0;z-index:5;backdrop-filter:blur(16px)}
+.brand{font-size:22px;font-weight:850;letter-spacing:-.7px;padding:6px 10px 24px}.brand span{color:var(--accent)}
+.nav{display:grid;gap:8px}.nav button{border:0;background:transparent;color:var(--muted);padding:13px 14px;text-align:left;border-radius:13px;font-weight:700}.nav button:hover,.nav button.active{background:var(--panel2);color:var(--text)}
+.sidebar-footer{position:absolute;bottom:20px;left:20px;right:20px;color:var(--muted);font-size:12px;line-height:1.5}
+.main{margin-left:250px;width:calc(100% - 250px);padding:28px;max-width:1500px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:24px}.top h1{margin:0;font-size:32px;letter-spacing:-1px}.date{color:var(--muted);font-size:14px}
+.view{display:none}.view.active{display:block}.grid{display:grid;gap:18px}.grid.cols3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid.cols2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{background:linear-gradient(145deg,rgba(17,36,58,.94),rgba(10,24,41,.94));border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.card h2,.card h3{margin:0 0 7px}.muted{color:var(--muted)}.small{font-size:12px}.big{font-size:34px;font-weight:850;letter-spacing:-1px}.accent{color:var(--accent)}
+.progress{height:9px;background:#091727;border-radius:999px;overflow:hidden;margin-top:13px}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:inherit;transition:.25s}
+.stat{display:flex;justify-content:space-between;align-items:end;gap:10px}.pill{display:inline-flex;padding:5px 9px;border-radius:999px;background:#102a3d;color:var(--accent);font-size:12px;font-weight:800}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.section-head h2{margin:0}
+.btn{border:1px solid var(--line);background:#122941;color:var(--text);padding:10px 14px;border-radius:12px;font-weight:750}.btn:hover{border-color:#315579}.btn.primary{background:var(--accent);color:#062019;border-color:var(--accent)}.btn.danger{background:transparent;color:var(--danger);border-color:#542b35}
+input,textarea,select{width:100%;background:#091827;border:1px solid var(--line);color:var(--text);border-radius:12px;padding:11px 12px;outline:none}input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{min-height:100px;resize:vertical}.form{display:grid;gap:10px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.upload{border:1px dashed #315579;border-radius:16px;padding:22px;text-align:center;background:#091827}.upload input{display:none}.upload label{display:inline-block}.list{display:grid;gap:10px;margin-top:14px}.item{background:#0a1929;border:1px solid var(--line);border-radius:14px;padding:14px}.item-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.item-actions{display:flex;gap:6px;flex-wrap:wrap}.item-actions button{padding:7px 9px;border-radius:9px;border:1px solid var(--line);background:#10243a;color:var(--text);font-size:12px}
+.check{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px}.check input{width:auto}.empty{padding:25px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:15px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.day{min-height:85px;border:1px solid var(--line);background:#091827;border-radius:12px;padding:8px;font-size:12px}.day b{display:block;margin-bottom:5px}.event{background:#153a39;color:#b8ffe9;border-radius:7px;padding:4px;margin-top:4px;font-size:11px}
+.mobile-nav{display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:20;padding:20px}.modal.open{display:flex}.modal-box{width:min(650px,100%);max-height:90vh;overflow:auto;background:#0d1b2d;border:1px solid var(--line);border-radius:22px;padding:22px}
+.toast{position:fixed;right:20px;bottom:20px;background:#e9fff8;color:#05261d;padding:12px 15px;border-radius:12px;font-weight:750;display:none;z-index:30}
+@media(max-width:900px){.sidebar{display:none}.main{margin:0;width:100%;padding:18px;padding-bottom:90px}.grid.cols3,.grid.cols2{grid-template-columns:1fr}.top h1{font-size:25px}.mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#07111fee;border-top:1px solid var(--line);z-index:10;justify-content:space-around;padding:8px}.mobile-nav button{background:transparent;border:0;color:var(--muted);font-size:11px;padding:5px}.mobile-nav button.active{color:var(--accent)}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">LOCK <span>IN</span> MODE</div>
+  <nav class="nav">
+    <button class="active" data-view="dashboard">⌂ Dashboard</button>
+    <button data-view="academics">▣ Academics</button>
+    <button data-view="money">₦ Making Money</button>
+    <button data-view="fitness">◉ Fitness & Wellness</button>
+    <button data-view="routines">✓ Routines</button>
+  </nav>
+  <div class="sidebar-footer">Your personal command centre.<br>Everything is saved in this browser.</div>
+</aside>
+
+<main class="main">
+  <div class="top"><div><h1 id="pageTitle">Dashboard</h1><div class="date" id="today"></div></div><button class="btn" onclick="exportData()">Export data</button></div>
+
+  <section id="dashboard" class="view active">
+    <div class="grid cols3">
+      <div class="card"><div class="muted">Academic progress</div><div class="big" id="dashAcademic">0%</div><div class="progress"><div class="bar" id="dashAcademicBar"></div></div></div>
+      <div class="card"><div class="muted">Money goal</div><div class="big" id="dashMoney">0%</div><div class="progress"><div class="bar" id="dashMoneyBar"></div></div></div>
+      <div class="card"><div class="muted">Routine completion</div><div class="big" id="dashRoutine">0%</div><div class="progress"><div class="bar" id="dashRoutineBar"></div></div></div>
+    </div>
+    <div class="grid cols2" style="margin-top:18px">
+      <div class="card"><div class="section-head"><h2>Today's focus</h2><span class="pill" id="todayCount">0 tasks</span></div><div id="todayTasks" class="list"></div></div>
+      <div class="card"><div class="section-head"><h2>Quick capture</h2></div><div class="form">
+        <input id="quickText" placeholder="Something you don't want to forget...">
+        <select id="quickType"><option value="money">Money update</option><option value="routine">Routine</option><option value="note">General note</option></select>
+        <button class="btn primary" onclick="quickAdd()">Save</button>
+      </div></div>
+    </div>
+  </section>
+
+  <section id="academics" class="view">
+    <div class="grid cols2">
+      <div class="card">
+        <div class="section-head"><h2>Study library</h2><span class="pill" id="academicOverall">0%</span></div>
+        <div class="upload"><label class="btn primary" for="pdfInput">+ Upload PDFs</label><input id="pdfInput" type="file" accept="application/pdf" multiple><div class="muted small" style="margin-top:9px">Upload multiple lecture notes, textbooks or past questions.</div></div>
+        <div id="pdfList" class="list"></div>
+      </div>
+      <div class="card">
+        <div class="section-head"><h2>Timetable</h2><label class="btn" for="timetableInput">Upload</label><input id="timetableInput" type="file" accept="image/*,.pdf" hidden></div>
+        <div id="timetableBox" class="empty">Upload an image or PDF of your timetable. It stays on this device.</div>
+        <div class="form" style="margin-top:15px">
+          <input id="className" placeholder="Class / lecture name">
+          <div class="form-row"><input id="classDate" type="date"><input id="classTime" type="time"></div>
+          <button class="btn primary" onclick="addClass()">Add class</button>
+        </div>
+        <div id="classList" class="list"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="section-head"><h2>Study notes</h2><button class="btn primary" onclick="addNote()">Add note</button></div>
+      <div class="form"><input id="noteTitle" placeholder="Note title"><textarea id="noteBody" placeholder="Write a quick revision note, formula, reminder, etc."></textarea></div>
+      <div id="notesList" class="list"></div>
+    </div>
+  </section>
+
+  <section id="money" class="view">
+    <div class="grid cols2">
+      <div class="card">
+        <div class="section-head"><h2>Money goal</h2><span class="pill" id="moneyPercent">0%</span></div>
+        <div class="form">
+          <div class="form-row"><input id="moneyCurrent" type="number" min="0" placeholder="Current amount"><input id="moneyTarget" type="number" min="1" placeholder="Target amount"></div>
+          <input id="moneyDeadline" type="date">
+          <button class="btn primary" onclick="saveMoneyGoal()">Save goal</button>
+        </div>
+        <div class="progress"><div class="bar" id="moneyBar"></div></div>
+        <div class="muted small" id="moneySummary" style="margin-top:8px"></div>
+      </div>
+      <div class="card">
+        <div class="section-head"><h2>Money updates</h2><span class="pill">Don't forget</span></div>
+        <div class="form"><input id="moneyUpdate" placeholder="e.g. Applied for X / waiting for payment"><input id="moneyCheckDate" type="date"><button class="btn primary" onclick="addMoneyUpdate()">Add update</button></div>
+        <div id="moneyList" class="list"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="section-head"><h2>Skills you're learning</h2><button class="btn primary" onclick="addSkill()">Add skill</button></div>
+      <div class="form"><div class="form-row"><input id="skillName" placeholder="Skill e.g. JavaScript"><input id="skillPercent" type="number" min="0" max="100" placeholder="Progress %"></div><textarea id="skillNote" placeholder="What have you learned so far?"></textarea></div>
+      <div id="skillList" class="list"></div>
+    </div>
+  </section>
+
+  <section id="fitness" class="view">
+    <div class="card" style="margin-bottom:18px">
+      <h2>Wellness tracker</h2>
+      <p class="muted">Track your wellness habits without comparing yourself to anyone else. If you use weight goals, focus on health and guidance from a parent/guardian or qualified health professional.</p>
+      <div class="form">
+        <div class="form-row"><input id="weightNow" type="number" step="0.1" min="0" placeholder="Current body weight"><input id="weightTarget" type="number" step="0.1" min="0" placeholder="Optional target"></div>
+        <input id="weightDeadline" type="date">
+        <button class="btn primary" onclick="saveWeight()">Save wellness target</button>
+      </div>
+      <div class="progress"><div class="bar" id="weightBar"></div></div>
+      <div class="muted small" id="weightSummary" style="margin-top:8px"></div>
+    </div>
+    <div class="grid cols2">
+      <div class="card"><div class="section-head"><h2>Daily exercise</h2><button class="btn primary" onclick="addExercise()">Add</button></div>
+        <div class="form"><input id="exerciseName" placeholder="Exercise / routine"><input id="exerciseDuration" placeholder="Duration or reps (optional)"></div>
+        <div id="exerciseList" class="list"></div>
+      </div>
+      <div class="card"><h2>Wellness habits</h2><div class="list">
+        <label class="check"><input type="checkbox" id="waterHabit"> Hydration</label>
+        <label class="check"><input type="checkbox" id="sleepHabit"> Good sleep routine</label>
+        <label class="check"><input type="checkbox" id="breakHabit"> Take study breaks</label>
+        <label class="check"><input type="checkbox" id="walkHabit"> Walk / move regularly</label>
+      </div></div>
+    </div>
+  </section>
+
+  <section id="routines" class="view">
+    <div class="card">
+      <div class="section-head"><h2>Routine planner</h2><span class="pill">Daily • Weekly • Monthly • Yearly</span></div>
+      <div class="form">
+        <input id="routineName" placeholder="What do you need to do?">
+        <div class="form-row"><select id="routineFreq"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select><input id="routineDate" type="date"></div>
+        <input id="routineTime" type="time">
+        <button class="btn primary" onclick="addRoutine()">Add routine</button>
+      </div>
+      <div id="routineList" class="list"></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="mobile-nav">
+  <button class="active" data-view="dashboard">⌂<br>Home</button><button data-view="academics">▣<br>Study</button><button data-view="money">₦<br>Money</button><button data-view="fitness">◉<br>Wellness</button><button data-view="routines">✓<br>Routines</button>
+</div>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+const { GlobalWorkerOptions, getDocument } = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs");
+GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
+
+const KEY="lockInMode_v1";
+let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
+  pdfs:[], classes:[], notes:[], money:{current:0,target:0,deadline:""}, moneyUpdates:[], skills:[],
+  weight:{now:"",target:"",deadline:""}, exercises:[], routines:[], timetable:""
+};
+const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+const $=id=>document.getElementById(id);
+const toast=(m)=>{let t=$("toast");t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",1800)};
+const pct=(a,b)=>b?Math.max(0,Math.min(100,Math.round(a/b*100))):0;
+
+function show(view){
+  document.querySelectorAll(".view").forEach(x=>x.classList.toggle("active",x.id===view));
+  document.querySelectorAll("[data-view]").forEach(x=>x.classList.toggle("active",x.dataset.view===view));
+  $("pageTitle").textContent={dashboard:"Dashboard",academics:"Academics",money:"Making Money",fitness:"Fitness & Wellness",routines:"Routines"}[view];
+  render();
+}
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>show(b.dataset.view));
+$("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+$("pdfInput").onchange=async e=>{
+  for(const file of e.target.files){
+    try{
+      const buf=await file.arrayBuffer();
+      const pdf=await getDocument({data:buf}).promise;
+      state.pdfs.push({id:crypto.randomUUID(),name:file.name,pages:pdf.numPages,read:0});
+    }catch(err){toast("Could not read "+file.name)}
+  }
+  save(); render(); e.target.value="";
+};
+window.setRead=(id)=>{
+  const p=state.pdfs.find(x=>x.id===id); if(!p)return;
+  const v=prompt(`How many pages have you read? (0-${p.pages})`,p.read);
+  if(v!==null){p.read=Math.max(0,Math.min(p.pages,parseInt(v)||0));save();render()}
+};
+window.delPdf=id=>{state.pdfs=state.pdfs.filter(x=>x.id!==id);save();render()};
+
+$("timetableInput").onchange=e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=()=>{state.timetable={name:f.name,data:r.result,type:f.type};save();render()};r.readAsDataURL(f);
+};
+window.addClass=()=>{
+  const name=$("className").value.trim(),date=$("classDate").value,time=$("classTime").value;
+  if(!name||!date)return toast("Add a class name and date");
+  state.classes.push({id:crypto.randomUUID(),name,date,time});save();$("className").value="";render()
+};
+window.delClass=id=>{state.classes=state.classes.filter(x=>x.id!==id);save();render()};
+window.addNote=()=>{
+  const title=$("noteTitle").value.trim(),body=$("noteBody").value.trim();if(!title&&!body)return;
+  state.notes.unshift({id:crypto.randomUUID(),title:title||"Untitled",body});save();$("noteTitle").value="";$("noteBody").value="";render()
+};
+window.delNote=id=>{state.notes=state.notes.filter(x=>x.id!==id);save();render()};
+
+window.saveMoneyGoal=()=>{
+  state.money.current=+($("moneyCurrent").value||0);state.money.target=+($("moneyTarget").value||0);state.money.deadline=$("moneyDeadline").value;save();render();toast("Money goal saved")
+};
+window.addMoneyUpdate=()=>{
+  const text=$("moneyUpdate").value.trim();if(!text)return;
+  state.moneyUpdates.unshift({id:crypto.randomUUID(),text,date:$("moneyCheckDate").value||""});save();$("moneyUpdate").value="";render()
+};
+window.delMoneyUpdate=id=>{state.moneyUpdates=state.moneyUpdates.filter(x=>x.id!==id);save();render()};
+window.addSkill=()=>{
+  const name=$("skillName").value.trim();if(!name)return;
+  state.skills.push({id:crypto.randomUUID(),name,p:+$("skillPercent").value||0,note:$("skillNote").value.trim()});save();$("skillName").value="";$("skillPercent").value="";$("skillNote").value="";render()
+};
+window.delSkill=id=>{state.skills=state.skills.filter(x=>x.id!==id);save();render()};
+
+window.saveWeight=()=>{
+  state.weight.now=$("weightNow").value;state.weight.target=$("weightTarget").value;state.weight.deadline=$("weightDeadline").value;save();render();toast("Wellness target saved")
+};
+window.addExercise=()=>{
+  const name=$("exerciseName").value.trim();if(!name)return;
+  state.exercises.push({id:crypto.randomUUID(),name,duration:$("exerciseDuration").value.trim(),done:false});save();$("exerciseName").value="";$("exerciseDuration").value="";render()
+};
+window.toggleExercise=id=>{const x=state.exercises.find(x=>x.id===id);x.done=!x.done;save();render()};
+window.delExercise=id=>{state.exercises=state.exercises.filter(x=>x.id!==id);save();render()};
+
+window.addRoutine=()=>{
+  const name=$("routineName").value.trim();if(!name)return;
+  state.routines.push({id:crypto.randomUUID(),name,freq:$("routineFreq").value,date:$("routineDate").value,time:$("routineTime").value,done:false});save();$("routineName").value="";render()
+};
+window.toggleRoutine=id=>{const x=state.routines.find(x=>x.id===id);x.done=!x.done;save();render()};
+window.delRoutine=id=>{state.routines=state.routines.filter(x=>x.id!==id);save();render()};
+
+window.quickAdd=()=>{
+  const text=$("quickText").value.trim(),type=$("quickType").value;if(!text)return;
+  if(type==="money")state.moneyUpdates.unshift({id:crypto.randomUUID(),text,date:""});
+  else if(type==="routine")state.routines.push({id:crypto.randomUUID(),name:text,freq:"Daily",date:new Date().toISOString().slice(0,10),time:"",done:false});
+  else state.notes.unshift({id:crypto.randomUUID(),title:"Quick note",body:text});
+  save();$("quickText").value="";render();toast("Saved")
+};
+window.exportData=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="lock-in-mode-backup.json";a.click();URL.revokeObjectURL(a.href)
+};
+
+function render(){
+  const totalPages=state.pdfs.reduce((s,p)=>s+p.pages,0),readPages=state.pdfs.reduce((s,p)=>s+p.read,0),ap=pct(readPages,totalPages);
+  $("dashAcademic").textContent=ap+"%";$("dashAcademicBar").style.width=ap+"%";$("academicOverall").textContent=ap+"%";
+  $("dashMoney").textContent=pct(state.money.current,state.money.target)+"%";$("dashMoneyBar").style.width=pct(state.money.current,state.money.target)+"%";
+  const rp=state.routines.length?pct(state.routines.filter(x=>x.done).length,state.routines.length):0;
+  $("dashRoutine").textContent=rp+"%";$("dashRoutineBar").style.width=rp+"%";
+  $("moneyPercent").textContent=pct(state.money.current,state.money.target)+"%";$("moneyBar").style.width=pct(state.money.current,state.money.target)+"%";
+  $("moneySummary").textContent=state.money.target?`₦${state.money.current.toLocaleString()} of ₦${state.money.target.toLocaleString()}${state.money.deadline?" • target date "+state.money.deadline:""}`:"Set your current amount and target.";
+  $("moneyCurrent").value=state.money.current||"";$("moneyTarget").value=state.money.target||"";$("moneyDeadline").value=state.money.deadline||"";
+  renderPdfs();renderTimetable();renderClasses();renderNotes();renderMoney();renderSkills();renderWeight();renderExercises();renderRoutines();renderToday();
+}
+function renderPdfs(){
+  $("pdfList").innerHTML=state.pdfs.length?state.pdfs.map(p=>`<div class="item"><div class="item-top"><div><b>${esc(p.name)}</b><div class="muted small">${p.pages} pages • ${p.read} read</div></div><span class="pill">${pct(p.read,p.pages)}%</span></div><div class="progress"><div class="bar" style="width:${pct(p.read,p.pages)}%"></div></div><div class="item-actions" style="margin-top:10px"><button onclick="setRead('${p.id}')">Update pages</button><button class="danger" onclick="delPdf('${p.id}')">Remove</button></div></div>`).join(""):`<div class="empty">No PDFs yet.</div>`;
+}
+function renderTimetable(){
+  const t=state.timetable;
+  $("timetableBox").innerHTML=t? (t.type==="application/pdf"?`<iframe src="${t.data}" style="width:100%;height:430px;border:0;border-radius:12px"></iframe>`:`<img src="${t.data}" alt="Timetable" style="max-width:100%;max-height:430px;border-radius:12px">`) : "Upload an image or PDF of your timetable. It stays on this device.";
+}
+function renderClasses(){
+  $("classList").innerHTML=state.classes.length?state.classes.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(x=>`<div class="item"><b>${esc(x.name)}</b><div class="muted small">${x.date}${x.time?" • "+x.time:""}</div><div class="item-actions" style="margin-top:8px"><button class="danger" onclick="delClass('${x.id}')">Delete</button></div></div>`).join(""):`<div class="empty">No individual classes added.</div>`;
+}
+function renderNotes(){
+  $("notesList").innerHTML=state.notes.length?state.notes.map(x=>`<div class="item"><b>${esc(x.title)}</b><div class="muted" style="white-space:pre-wrap;margin-top:6px">${esc(x.body)}</div><div class="item-actions" style="margin-top:8px"><button class="danger" onclick="delNote('${x.id}')">Delete</button></div></div>`).join(""):`<div class="empty">No notes yet.</div>`;
+}
+function renderMoney(){
+  $("moneyList").innerHTML=state.moneyUpdates.length?state.moneyUpdates.map(x=>`<div class="item"><div class="item-top"><b>${esc(x.text)}</b>${x.date?`<span class="pill">${x.date}</span>`:""}</div><div class="item-actions" style="margin-top:8px"><button class="danger" onclick="delMoneyUpdate('${x.id}')">Delete</button></div></div>`).join(""):`<div class="empty">No money updates yet.</div>`;
+}
+function renderSkills(){
+  $("skillList").innerHTML=state.skills.length?state.skills.map(x=>`<div class="item"><div class="item-top"><b>${esc(x.name)}</b><span class="pill">${Math.max(0,Math.min(100,x.p))}%</span></div><div class="progress"><div class="bar" style="width:${Math.max(0,Math.min(100,x.p))}%"></div></div><div class="muted small" style="margin-top:8px;white-space:pre-wrap">${esc(x.note)}</div><div class="item-actions" style="margin-top:8px"><button onclick="editSkill('${x.id}')">Edit</button><button class="danger" onclick="delSkill('${x.id}')">Delete</button></div></div>`).join(""):`<div class="empty">Add a skill and track your self-learning progress.</div>`;
+}
+window.editSkill=id=>{const x=state.skills.find(x=>x.id===id);if(!x)return;const p=prompt("Progress %",x.p);if(p!==null)x.p=Math.max(0,Math.min(100,+p||0));const n=prompt("What have you learned?",x.note);if(n!==null)x.note=n;save();render()};
+function renderWeight(){
+  $("weightNow").value=state.weight.now||"";$("weightTarget").value=state.weight.target||"";$("weightDeadline").value=state.weight.deadline||"";
+  let p=0,summary="No target set.";
+  const a=+state.weight.now,b=+state.weight.target;
+  if(a&&b){p=100-Math.abs(a-b)/Math.max(a,b)*100;p=Math.max(0,Math.min(100,Math.round(p)));summary=`Current: ${a} • Target: ${b}${state.weight.deadline?" • target date "+state.weight.deadline:""} • ${p}% toward the saved target.`}
+  $("weightBar").style.width=p+"%";$("weightSummary").textContent=summary;
+}
+function renderExercises(){
+  $("exerciseList").innerHTML=state.exercises.length?state.exercises.map(x=>`<div class="item"><label class="check"><input type="checkbox" ${x.done?"checked":""} onchange="toggleExercise('${x.id}')"><span><b>${esc(x.name)}</b><br><span class="muted small">${esc(x.duration)}</span></span></label><div class="item-actions"><button class="danger" onclick="delExercise('${x.id}')">Delete</button></div></div>`).join(""):`<div class="empty">Add the exercises you want to remember.</div>`;
+}
+function renderRoutines(){
+  $("routineList").innerHTML=state.routines.length?state.routines.map(x=>`<div class="item"><label class="check"><input type="checkbox" ${x.done?"checked":""} onchange="toggleRoutine('${x.id}')"><span><b>${esc(x.name)}</b><br><span class="muted small">${x.freq}${x.date?" • "+x.date:""}${x.time?" • "+x.time:""}</span></span></label><div class="item-actions"><button class="danger" onclick="delRoutine('${x.id}')">Delete</button></div></div>`).join(""):`<div class="empty">Your routines will appear here.</div>`;
+}
+function renderToday(){
+  const today=new Date().toISOString().slice(0,10);
+  const tasks=[...state.routines.filter(x=>x.date===today&&!x.done).map(x=>({name:x.name,kind:x.freq})),...state.classes.filter(x=>x.date===today).map(x=>({name:x.name,kind:"Class"}))];
+  $("todayCount").textContent=tasks.length+" task"+(tasks.length===1?"":"s");
+  $("todayTasks").innerHTML=tasks.length?tasks.map(x=>`<div class="item"><b>${esc(x.name)}</b><div class="muted small">${x.kind}</div></div>`).join(""):`<div class="empty">Nothing scheduled for today. Lock in 😤</div>`;
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+render();
+</script>
+</body>
+</html>
